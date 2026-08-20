@@ -1,7 +1,145 @@
+# ==============================
+
+# Python
+
+# ==============================
+
+**pycache**/
+*.py[cod]
+*$py.class
+*.so
+
+# ==============================
+
+# Virtual Environment
+
+# ==============================
+
 venv/
-__pycache__/
-*.pyc
+.venv/
+env/
+ENV/
+
+# ==============================
+
+# Django
+
+# ==============================
+
+*.log
 db.sqlite3
-media/
+db.sqlite3-journal
+
+# Django static files
+
 staticfiles/
+
+# User uploaded media
+
+media/
+
+# ==============================
+
+# Environment Variables / Secrets
+
+# ==============================
+
 .env
+.env.*
+!.env.example
+
+# ==============================
+
+# Machine Learning
+
+# ==============================
+
+# Trained model weights
+
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# YOLO / Ultralytics generated files
+
+runs/
+wandb/
+
+# ==============================
+
+# Dataset
+
+# ==============================
+
+# Ignore original/private datasets
+
+dataset/raw_images/
+
+# Ignore generated dataset cache/files if needed
+
+dataset/cache/
+
+# ==============================
+
+# Jupyter
+
+# ==============================
+
+.ipynb_checkpoints/
+
+# ==============================
+
+# IDEs
+
+# ==============================
+
+.vscode/
+.idea/
+
+# VS Code local history
+
+.history/
+
+# ==============================
+
+# OS Files
+
+# ==============================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+
+# Testing / Coverage
+
+# ==============================
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==============================
+
+# Build / Distribution
+
+# ==============================
+
+build/
+dist/
+*.egg-info/
+
+# ==============================
+
+# Temporary Files
+
+# ==============================
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
