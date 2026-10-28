@@ -1,0 +1,239 @@
+{% extends 'waste_identifier/base.html' %}
+{% load static %}
+
+{% block title %}Smart Medicine Waste & Expiry Identifier | AI Dual-Vision Pipeline{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div style="text-align: center; margin-bottom: 36px; padding: 16px 0;">
+    <span class="status-pill status-valid" style="margin-bottom: 14px;">
+        <span class="pulse-dot"></span> Dual-Stream Vision Pipeline Active
+    </span>
+    <h1 style="font-size: 2.6rem; margin-bottom: 12px; max-width: 860px; margin-left: auto; margin-right: auto;">
+        Automated Medicine Identification & Verified Expiry Disposal
+    </h1>
+    <p style="font-size: 1.12rem; color: var(--text-secondary); max-width: 720px; margin: 0 auto 24px;">
+        Upload the <strong>Front</strong> (for brand & formulation identity) and <strong>Back</strong> (for YOLOv8 expiry detection) of your medicine packaging. Get verified CDSCO disposal protocols tailored to your medicine.
+    </p>
+
+    <!-- Quick Action Bar -->
+    <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+        <a href="#dualUploadSection" class="btn btn-primary">
+            <span>📷 Dual Package Scanner</span>
+        </a>
+        <a href="{% url 'waste_identifier:sample_scan' %}" class="btn btn-secondary">
+            <span>⚡ Run Sample Test</span>
+        </a>
+        <a href="{% url 'waste_identifier:disposal_guide' %}" class="btn btn-secondary">
+            <span>♻️ CDSCO 2025 Rules</span>
+        </a>
+    </div>
+</div>
+
+<!-- Stats Counter Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--primary-teal);">🔬</div>
+        <div class="stat-info">
+            <h4>{{ total_count }}</h4>
+            <p>Total Scans Performed</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: var(--status-valid-bg); color: var(--status-valid);">✅</div>
+        <div class="stat-info">
+            <h4>{{ valid_count }}</h4>
+            <p>Valid & Safe to Use</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: var(--status-expired-bg); color: var(--status-expired);">⚠️</div>
+        <div class="stat-info">
+            <h4>{{ expired_count }}</h4>
+            <p>Expired Waste Flagged</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: var(--status-review-bg); color: var(--status-review);">🔍</div>
+        <div class="stat-info">
+            <h4>{{ review_count }}</h4>
+            <p>Manual Review Required</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main Dual Scanner Card & Upload Zone -->
+<section id="dualUploadSection" class="glass-card" style="margin-bottom: 48px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2 style="font-size: 1.55rem; margin-bottom: 4px;">Two-Image Medicine Packaging Scanner</h2>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                Capture or drop photos for both sides of the packaging to cross-verify identity and expiration.
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'waste_identifier:sample_scan' %}" class="btn btn-secondary btn-sm">
+                <span>🧪 Quick Test Sample</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Safety Warning Banner -->
+    <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-sm); padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 22px;">ℹ️</span>
+        <div style="font-size: 0.92rem; color: #cbd5e1;">
+            <strong>Packaging Guidance:</strong> For optimal accuracy, please ensure both photos correspond to the <em>same physical medicine strip or bottle</em>. If you only have one side available, the system will adapt with safety notices.
+        </div>
+    </div>
+
+    <!-- Dual Upload Form -->
+    <form id="uploadForm" action="{% url 'waste_identifier:scan_upload' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="front_image" id="frontFileInput" accept="image/*" style="display: none;">
+        <input type="file" name="back_image" id="backFileInput" accept="image/*" style="display: none;">
+        <input type="hidden" name="front_webcam" id="frontWebcamInput">
+        <input type="hidden" name="back_webcam" id="backWebcamInput">
+
+        <div class="dual-upload-grid">
+            <!-- Front Package Card -->
+            <div class="upload-card-box">
+                <div class="upload-card-header">
+                    <div>
+                        <span class="tag-badge tag-front">Side 1 • Front View</span>
+                        <h4 style="font-size: 1.1rem; margin-top: 6px;">Medicine Name & Formulation</h4>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openCameraModal('front')">
+                        📹 Camera
+                    </button>
+                </div>
+
+                <div id="frontDropzone" class="dropzone-inner" onclick="document.getElementById('frontFileInput').click();">
+                    <div id="frontPrompt">
+                        <div style="font-size: 32px; margin-bottom: 8px;">💊</div>
+                        <p style="font-weight: 600; font-size: 0.98rem; margin-bottom: 4px;">Upload Front Packaging</p>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">Reads trade name, strength, and catalogue salt</p>
+                    </div>
+                    <div id="frontPreviewContainer" style="display: none; width: 100%;">
+                        <img id="frontPreviewImg" class="preview-thumb-box" alt="Front Preview">
+                        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); resetSide('front');">
+                                ↺ Replace
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Package Card -->
+            <div class="upload-card-box">
+                <div class="upload-card-header">
+                    <div>
+                        <span class="tag-badge tag-back">Side 2 • Back View</span>
+                        <h4 style="font-size: 1.1rem; margin-top: 6px;">Expiry Date & MFG Stamp</h4>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openCameraModal('back')">
+                        📹 Camera
+                    </button>
+                </div>
+
+                <div id="backDropzone" class="dropzone-inner" onclick="document.getElementById('backFileInput').click();">
+                    <div id="backPrompt">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🗓️</div>
+                        <p style="font-weight: 600; font-size: 0.98rem; margin-bottom: 4px;">Upload Back / Label View</p>
+                        <p style="color: var(--text-muted); font-size: 0.82rem;">YOLOv8 isolates EXP / MFG date bounding box</p>
+                    </div>
+                    <div id="backPreviewContainer" style="display: none; width: 100%;">
+                        <img id="backPreviewImg" class="preview-thumb-box" alt="Back Preview">
+                        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); resetSide('back');">
+                                ↺ Replace
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Action Bar -->
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="resetAll();">
+                Reset
+            </button>
+            <button type="submit" id="submitScanBtn" class="btn btn-primary" style="padding: 12px 30px; font-size: 1.05rem;">
+                <span>⚡ Run Dual-Stream Analysis</span>
+            </button>
+        </div>
+    </form>
+</section>
+
+<!-- Recent Scans Grid -->
+{% if recent_scans %}
+<section style="margin-bottom: 48px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 1.5rem;">Recent Scans & Verified Audits</h2>
+        <a href="{% url 'waste_identifier:history' %}" class="btn btn-secondary btn-sm">View All Archive →</a>
+    </div>
+
+    <div class="recent-grid">
+        {% for item in recent_scans %}
+        <div class="glass-card" style="padding: 16px;">
+            <div style="position: relative; height: 160px; overflow: hidden; border-radius: var(--radius-sm); margin-bottom: 12px; background: #000;">
+                {% if item.annotated_image %}
+                    <img src="{{ item.annotated_image.url }}" alt="{{ item.medicine_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% elif item.effective_front_image %}
+                    <img src="{{ item.effective_front_image.url }}" alt="{{ item.medicine_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No Preview</div>
+                {% endif %}
+                <span class="status-pill {% if item.status == 'VALID' %}status-valid{% elif item.status == 'EXPIRED' %}status-expired{% else %}status-review{% endif %}" style="position: absolute; top: 10px; right: 10px;">
+                    {{ item.status }}
+                </span>
+            </div>
+
+            <h3 style="font-size: 1.05rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ item.medicine_name }}
+            </h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">
+                EXP: <strong style="color: #fff;">{{ item.exp_date|default:"Unknown" }}</strong>
+            </p>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">{{ item.created_at|timesince }} ago</span>
+                <a href="{% url 'waste_identifier:scan_detail' item.id %}" class="btn btn-secondary btn-sm">Report →</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Webcam Capture Modal -->
+<div id="webcamModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 id="cameraModalTitle" style="font-size: 1.25rem;">Live Packaging Camera</h3>
+            <button type="button" id="closeWebcamBtn" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div style="position: relative; border-radius: var(--radius-sm); overflow: hidden; background: #000; aspect-ratio: 4/3; margin-bottom: 16px;">
+            <video id="webcamVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Align packaging text inside frame</span>
+            <button type="button" id="captureWebcamBtn" class="btn btn-primary">
+                📸 Capture Frame
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="modal-overlay">
+    <div style="text-align: center; color: #fff;">
+        <div class="spinner" style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.2); border-top-color: var(--primary-teal); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px;"></div>
+        <h3 style="font-size: 1.4rem; margin-bottom: 8px;">Running Dual-Stream AI Pipeline</h3>
+        <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.95rem;">
+            Analyzing front packaging brand & matching catalogue salts, isolating YOLOv8 expiry stamps, and querying CDSCO 2025 disposal protocols...
+        </p>
+    </div>
+</div>
+{% endblock %}

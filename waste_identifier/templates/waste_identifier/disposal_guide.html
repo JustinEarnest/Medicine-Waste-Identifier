@@ -1,0 +1,141 @@
+{% extends 'waste_identifier/base.html' %}
+{% load static %}
+
+{% block title %}Safe Pharmaceutical Disposal Guide | CDSCO 2025 Protocols{% endblock %}
+
+{% block content %}
+<!-- Guide Header -->
+<div style="text-align: center; margin-bottom: 36px; padding: 16px 0;">
+    <span class="status-pill status-valid" style="margin-bottom: 14px;">
+        ♻️ Official Regulatory Directive
+    </span>
+    <h1 style="font-size: 2.5rem; margin-bottom: 12px;">Verified Pharmaceutical Waste Disposal Guide</h1>
+    <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 720px; margin: 0 auto;">
+        Source-backed protocols derived from the <strong>CDSCO Government of India Guidelines on Disposal of Expired/Unused Drugs</strong> (26 May 2025). Prevent soil toxicity, aquatic contamination, and antimicrobial resistance.
+    </p>
+</div>
+
+<!-- Critical Warning Banner -->
+<div class="glass-card" style="border-left: 6px solid var(--status-expired); margin-bottom: 36px; background: rgba(239, 68, 68, 0.08);">
+    <div style="display: flex; gap: 18px; align-items: flex-start;">
+        <div style="font-size: 32px;">🚫</div>
+        <div>
+            <h3 style="color: #f87171; font-size: 1.3rem; margin-bottom: 6px;">Never Flush Medicines Down the Toilet or Drain</h3>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+                Municipal wastewater plants and septic tanks are <strong>incapable of neutralizing active pharmaceutical ingredients (APIs)</strong>. Flushing antibiotics, cytotoxic oncology agents, or hormones discharges bioactive compounds into rivers, aquifers, and municipal water supplies, accelerating antimicrobial-resistant pathogens and poisoning ecosystems.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Official Reference Seal Card -->
+<div class="glass-card cdsco-seal" style="margin-bottom: 36px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <span class="tag-badge tag-back" style="margin-bottom: 6px; display: inline-block;">Official Government Reference</span>
+            <h3 style="font-size: 1.25rem; margin-bottom: 4px;">CDSCO Guidelines on Disposal of Expired/Unused Drugs</h3>
+            <p style="color: var(--text-secondary); font-size: 0.88rem;">Published: 26 May 2025 • Central Drugs Standard Control Organization, Ministry of Health and Family Welfare, New Delhi</p>
+        </div>
+        <a href="https://www.cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadPublic_NoticesFiles/Guidance%20document%20on%20disposal.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+            <span>Official CDSCO Document (PDF) ↗</span>
+        </a>
+    </div>
+</div>
+
+<!-- Verified Rules Matrix Table -->
+<section class="glass-card" style="margin-bottom: 48px;">
+    <h2 style="font-size: 1.5rem; margin-bottom: 16px;">CDSCO 2025 Medicine Waste Protocol Matrix</h2>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 24px;">
+        Disposal actions vary by pharmaceutical category. Use this matrix to safely route expired or unconsumed medications:
+    </p>
+
+    <div style="overflow-x: auto;">
+        <table class="kv-table" style="width: 100%;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--bg-glass-border); text-align: left;">
+                    <th style="padding: 12px; color: var(--primary-teal); font-size: 0.85rem; text-transform: uppercase;">Rule ID</th>
+                    <th style="padding: 12px; color: #fff; font-size: 0.85rem; text-transform: uppercase;">Category</th>
+                    <th style="padding: 12px; color: #fff; font-size: 0.85rem; text-transform: uppercase;">Condition</th>
+                    <th style="padding: 12px; color: #fff; font-size: 0.85rem; text-transform: uppercase;">Mandated Action</th>
+                    <th style="padding: 12px; color: #fff; font-size: 0.85rem; text-transform: uppercase;">Critical Safeguards</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                <tr style="border-bottom: 1px solid var(--bg-glass-border);">
+                    <td style="padding: 14px 12px; font-family: monospace; font-size: 0.85rem; color: var(--primary-teal); vertical-align: top;">
+                        {{ rule.rule_id }}
+                    </td>
+                    <td style="padding: 14px 12px; font-weight: 600; color: #fff; vertical-align: top;">
+                        {{ rule.medicine_category }}
+                    </td>
+                    <td style="padding: 14px 12px; vertical-align: top;">
+                        <span class="status-pill {% if rule.condition == 'VALID' %}status-valid{% elif rule.condition == 'EXPIRED' %}status-expired{% else %}status-review{% endif %}">
+                            {{ rule.condition }}
+                        </span>
+                    </td>
+                    <td style="padding: 14px 12px; font-size: 0.88rem; color: #e2e8f0; line-height: 1.5; vertical-align: top;">
+                        {{ rule.approved_action }}
+                    </td>
+                    <td style="padding: 14px 12px; font-size: 0.85rem; color: #fbbf24; line-height: 1.5; vertical-align: top;">
+                        {{ rule.precautions }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Three Primary Safe Disposal Protocols -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 48px;">
+    <!-- Step 1: Drug Take-Back -->
+    <div class="glass-card" style="border-top: 4px solid var(--primary-teal);">
+        <div style="width: 52px; height: 52px; background: rgba(6, 182, 212, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--primary-teal); margin-bottom: 16px;">
+            🏥
+        </div>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">1. Reverse Logistics Take-Back</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.6;">
+            Mandatory for antibiotics, cytotoxic oncology drugs, and narcotics. Authorized healthcare dropboxes route waste to Bio-Medical Waste facilities for high-temperature incineration (>1100°C).
+        </p>
+        <ul style="color: var(--text-secondary); font-size: 0.88rem; list-style-position: inside; line-height: 1.8;">
+            <li>Located at certified pharmacies, hospitals, and primary health centers (PHCs).</li>
+            <li>Eliminates groundwater contamination and AMR pathogen emergence.</li>
+            <li>Accepts tablets, capsules, injectables, inhalers, and ampoules.</li>
+        </ul>
+    </div>
+
+    <!-- Step 2: Household Trash Procedure -->
+    <div class="glass-card" style="border-top: 4px solid #38bdf8;">
+        <div style="width: 52px; height: 52px; background: rgba(56, 189, 248, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #38bdf8; margin-bottom: 16px;">
+            🗑️
+        </div>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">2. Household Solid Admixture</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.6;">
+            Applicable only to low-risk solid dosage forms (vitamins, paracetamol, antacids) when no take-back center is locally accessible:
+        </p>
+        <ol style="color: var(--text-secondary); font-size: 0.88rem; list-style-position: inside; line-height: 1.8;">
+            <li><strong>Do NOT crush</strong> tablets or empty capsule contents.</li>
+            <li><strong>Mix with unpalatable waste:</strong> Combine with used coffee grounds, soil, or cat litter.</li>
+            <li><strong>Seal tightly:</strong> Place inside a puncture-resistant plastic bag or container.</li>
+            <li><strong>Discard in solid waste:</strong> Place in dry municipal trash bin.</li>
+        </ol>
+    </div>
+
+    <!-- Step 3: Blisters & Packaging -->
+    <div class="glass-card" style="border-top: 4px solid #10b981;">
+        <div style="width: 52px; height: 52px; background: rgba(16, 185, 129, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #10b981; margin-bottom: 16px;">
+            📦
+        </div>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">3. Packaging Segregation</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.6;">
+            Defacing packaging prevents illicit counterfeiting while enabling clean material recycling.
+        </p>
+        <ul style="color: var(--text-secondary); font-size: 0.88rem; list-style-position: inside; line-height: 1.8;">
+            <li><strong>Deface Brand & Details:</strong> Cross out patient names, batch numbers, and brand logos with indelible marker.</li>
+            <li><strong>Paper Cartons:</strong> Flatten and place in paper recycling bins.</li>
+            <li><strong>Blister Foils:</strong> Discard according to local municipal multi-layer plastic/aluminum sorting.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

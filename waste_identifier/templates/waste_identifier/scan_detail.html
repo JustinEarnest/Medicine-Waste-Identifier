@@ -1,0 +1,373 @@
+{% extends 'waste_identifier/base.html' %}
+{% load static %}
+
+{% block title %}Dual Scan Report #{{ scan.id }} - {{ scan.medicine_name }} | MedWaste AI{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb & Top Bar -->
+<div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+    <div>
+        <a href="{% url 'waste_identifier:home' %}"
+            style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 4px; display: inline-block;">
+            ← Back to Dual Scanner
+        </a>
+        <h1 style="font-size: 2rem;">Dual Packaging Scan Report #{{ scan.id }}</h1>
+        <p style="color: var(--text-secondary); font-size: 0.92rem;">Processed on {{ scan.created_at|date:"F d, Y at
+            H:i" }} UTC</p>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <form action="{% url 'waste_identifier:mark_reviewed' scan.id %}" method="POST">
+            {% csrf_token %}
+            {% if scan.is_reviewed %}
+            <button type="submit" class="btn btn-secondary btn-sm">
+                <span>✓ Marked as Verified</span>
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-primary btn-sm">
+                <span>🔍 Mark as Manually Verified</span>
+            </button>
+            {% endif %}
+        </form>
+        <a href="{% url 'waste_identifier:home' %}" class="btn btn-secondary btn-sm">
+            <span>+ Scan Another Package</span>
+        </a>
+    </div>
+</div>
+
+<!-- Primary Expiry Status Announcement Card -->
+{% if scan.status == 'VALID' %}
+<div class="glass-card" style="margin-bottom: 28px; border-left: 6px solid var(--status-valid);">
+    {% elif scan.status == 'EXPIRED' %}
+    <div class="glass-card" style="margin-bottom: 28px; border-left: 6px solid var(--status-expired);">
+        {% else %}
+        <div class="glass-card" style="margin-bottom: 28px; border-left: 6px solid var(--status-review);">
+            {% endif %}
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 18px;">
+                    <div style="font-size: 38px;">
+                        {% if scan.status == 'VALID' %}🟢{% elif scan.status == 'EXPIRED' %}🔴{% else %}🟡{% endif %}
+                    </div>
+                    <div>
+                        <div
+                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap;">
+                            {% if scan.status == 'VALID' %}
+                            <h2 style="font-size: 1.6rem; color: #34d399;">{{ scan.get_status_display }}</h2>
+                            <span class="status-pill status-valid">{{ scan.status }}</span>
+                            {% elif scan.status == 'EXPIRED' %}
+                            <h2 style="font-size: 1.6rem; color: #f87171;">{{ scan.get_status_display }}</h2>
+                            <span class="status-pill status-expired">{{ scan.status }}</span>
+                            {% else %}
+                            <h2 style="font-size: 1.6rem; color: #fbbf24;">{{ scan.get_status_display }}</h2>
+                            <span class="status-pill status-review">{{ scan.status }}</span>
+                            {% endif %}
+
+                            {% if scan.identity_status == 'confirmed' %}
+                            <span class="tag-badge tag-back">Identity: {{ scan.get_identity_status_display }}</span>
+                            {% elif scan.identity_status == 'ambiguous' %}
+                            <span class="tag-badge"
+                                style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Identity:
+                                {{ scan.get_identity_status_display }}</span>
+                            {% else %}
+                            <span class="tag-badge tag-front">Identity: {{ scan.get_identity_status_display }}</span>
+                            {% endif %}
+                        </div>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                            {% if scan.status == 'VALID' %}
+                            The parsed expiration date (<strong>{{ scan.exp_date }}</strong>) has not yet passed.
+                            Inspect physical seal integrity and packaging before administration.
+                            {% elif scan.status == 'EXPIRED' %}
+                            <strong>SAFETY WARNING:</strong> This medicine has expired (printed expiry: <strong>{{
+                                scan.exp_date }}</strong>). Do NOT consume. Follow the CDSCO disposal instructions
+                            below.
+                            {% else %}
+                            <strong>AUDIT REQUIRED:</strong> Expiry date or medicine identity could not be verified
+                            automatically with high confidence. Please verify with a licensed pharmacist.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div style="text-align: right;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">Pipeline Confidence
+                    </div>
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--primary-teal);">
+                        {{ scan.confidence|floatformat:1 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warnings & Discrepancy Alerts (if any) -->
+        {% if scan.warnings %}
+        <div class="glass-card"
+            style="margin-bottom: 28px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 24px;">⚠️</span>
+                <div>
+                    <h4 style="color: #fbbf24; font-size: 1.05rem; margin-bottom: 4px;">Discrepancy & Verification
+                        Notice</h4>
+                    <div style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; white-space: pre-line;">
+                        {{ scan.warnings }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Side-by-Side Dual Analysis Grid (Front vs Back) -->
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; margin-bottom: 28px;">
+
+            <!-- FRONT PACKAGING CARD -->
+            <div class="glass-card" style="border-top: 4px solid #38bdf8;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="tag-badge tag-front">Front Package View</span>
+                        <h3 style="font-size: 1.25rem;">Medicine Identity</h3>
+                    </div>
+                    {% if scan.identity_status == 'confirmed' %}
+                    <span style="color: #34d399; font-size: 0.82rem; font-weight: 600;">✓ Catalogue Match</span>
+                    {% else %}
+                    <span style="color: #fbbf24; font-size: 0.82rem; font-weight: 600;">? User Audit</span>
+                    {% endif %}
+                </div>
+
+                <!-- Front Image Thumbnail -->
+                <div class="image-viewer" style="margin-bottom: 16px; background: #000; height: 220px;">
+                    {% if scan.effective_front_image %}
+                    <img src="{{ scan.effective_front_image.url }}" alt="Front Package" class="main-preview-img"
+                        style="height: 100%; object-fit: contain;">
+                    {% else %}
+                    <p style="color: var(--text-muted); padding: 40px; text-align: center;">No front package photo
+                        uploaded</p>
+                    {% endif %}
+                </div>
+
+                <!-- Parameters Table -->
+                <table class="kv-table" style="margin-bottom: 16px;">
+                    <tr>
+                        <td style="width: 38%;">Identified Name</td>
+                        <td><strong style="color: #fff;">{{ scan.medicine_name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Manufacturer</td>
+                        <td>{{ scan.manufacturer|default:"Unconfirmed Manufacturer" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Active Salts</td>
+                        <td>{{ scan.composition|default:"Not specified in catalogue" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Formulation</td>
+                        <td>{{ scan.dosage_form|default:"Standard Delivery Form" }} {{ scan.strength }}</td>
+                    </tr>
+                </table>
+
+                <!-- Interactive Name Confirmation / Correction Form -->
+                <div
+                    style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--bg-glass-border);">
+                    <label
+                        style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 600;">
+                        ✏️ Confirm or Correct Medicine Name:
+                    </label>
+                    <form action="{% url 'waste_identifier:confirm_name' scan.id %}" method="POST"
+                        style="display: flex; gap: 8px;">
+                        {% csrf_token %}
+                        <input type="text" id="medicineNameInput" name="medicine_name" value="{{ scan.medicine_name }}"
+                            placeholder="Search brand name..."
+                            style="flex: 1; padding: 8px 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--bg-glass-border); border-radius: var(--radius-sm); color: #fff; font-size: 0.9rem;">
+                        <button type="submit" class="btn btn-secondary btn-sm">Update</button>
+                    </form>
+                    {% if candidates %}
+                    <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
+                        Suggested from catalogue:
+                        {% for c in candidates|slice:":3" %}
+                        <span
+                            style="display: inline-block; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; margin: 2px; cursor: pointer;"
+                            onclick="setCandidateName('{{ c.name|escapejs }}');">
+                            {{ c.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- BACK PACKAGING CARD -->
+            <div class="glass-card" style="border-top: 4px solid #10b981;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="tag-badge tag-back">Back Package View</span>
+                        <h3 style="font-size: 1.25rem;">Expiry Detection (YOLOv8)</h3>
+                    </div>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">EasyOCR Rotation-Scan</span>
+                </div>
+
+                <!-- Back Annotated Overlay Image -->
+                <div class="image-viewer" style="margin-bottom: 16px; background: #000; height: 220px;">
+                    {% if scan.annotated_image %}
+                    <img src="{{ scan.annotated_image.url }}" alt="YOLOv8 Annotated" class="main-preview-img"
+                        style="height: 100%; object-fit: contain;">
+                    {% elif scan.effective_back_image %}
+                    <img src="{{ scan.effective_back_image.url }}" alt="Back Package" class="main-preview-img"
+                        style="height: 100%; object-fit: contain;">
+                    {% else %}
+                    <p style="color: var(--text-muted); padding: 40px; text-align: center;">No back package photo
+                        uploaded</p>
+                    {% endif %}
+                </div>
+
+                <!-- Expiry Parameters Table -->
+                <table class="kv-table" style="margin-bottom: 16px;">
+                    <tr>
+                        <td style="width: 38%;">Expiry Date (EXP)</td>
+                        <td>
+                            {% if scan.exp_date %}
+                            {% if scan.status == 'EXPIRED' %}
+                            <span
+                                style="color: #f87171; font-family: monospace; font-size: 1.05rem; font-weight: 700;">{{
+                                scan.exp_date }}</span>
+                            {% else %}
+                            <span
+                                style="color: #34d399; font-family: monospace; font-size: 1.05rem; font-weight: 700;">{{
+                                scan.exp_date }}</span>
+                            {% endif %}
+                            {% else %}
+                            <span style="color: var(--text-muted);">Not Detected / Ambiguous</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Manufacturing (MFG)</td>
+                        <td>
+                            {% if scan.mfg_date %}
+                            <span style="font-family: monospace;">{{ scan.mfg_date }}</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">Not Detected</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Standardized ISO</td>
+                        <td>
+                            {% if scan.parsed_expiry_date %}
+                            <code>{{ scan.parsed_expiry_date|date:"Y-m-d" }}</code>
+                            {% else %}
+                            <span style="color: var(--text-muted);">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Enhanced Crop Box if available -->
+                {% if scan.crop_image %}
+                <div class="crop-preview-box" style="margin-top: 10px;">
+                    <div style="font-size: 0.78rem; color: var(--primary-teal); font-weight: 600; margin-bottom: 6px;">
+                        LOCALIZED EXPIRY BOUNDING BOX (CLAHE + 2X INTERPOLATION)
+                    </div>
+                    <img src="{{ scan.crop_image.url }}" alt="Enhanced Crop" class="crop-img" style="max-height: 80px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Verified CDSCO 2025 Disposal Guidance Card -->
+        <div class="glass-card"
+            style="margin-bottom: 32px; border: 1px solid rgba(6, 182, 212, 0.4); background: linear-gradient(180deg, rgba(16, 24, 39, 0.85) 0%, rgba(6, 182, 212, 0.05) 100%);">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div
+                        style="width: 44px; height: 44px; border-radius: 10px; background: rgba(6, 182, 212, 0.2); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        ♻️
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.35rem; margin-bottom: 2px;">Verified Disposal Protocol</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Category: <strong>{{ scan.disposal_category|default:"General Pharmaceutical Formulation"
+                                }}</strong> • Rule: <code>{{ scan.disposal_rule_id|default:"DISP-GENERAL" }}</code>
+                        </p>
+                    </div>
+                </div>
+
+                {% if scan.disposal_source_url %}
+                <a href="{{ scan.disposal_source_url }}" target="_blank" rel="noopener noreferrer"
+                    class="btn btn-secondary btn-sm" style="border-color: rgba(6, 182, 212, 0.4);">
+                    <span>📜 View CDSCO Official Document ↗</span>
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Approved Action Section -->
+            <div
+                style="background: rgba(10, 14, 23, 0.6); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 16px; border-left: 4px solid var(--primary-teal);">
+                <h4
+                    style="font-size: 0.92rem; color: var(--primary-teal); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                    Approved Disposal Action
+                </h4>
+                <p style="font-size: 1rem; color: #f8fafc; line-height: 1.6;">
+                    {{ scan.disposal_guidance|linebreaksbr }}
+                </p>
+            </div>
+
+            <!-- Critical Precautions Section -->
+            <div
+                style="background: rgba(10, 14, 23, 0.6); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 16px; border-left: 4px solid #f59e0b;">
+                <h4
+                    style="font-size: 0.92rem; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                    Precautions & Environmental Safeguards
+                </h4>
+                <p style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.6;">
+                    {{ scan.disposal_precautions|linebreaksbr|default:"Never flush medicines into municipal drainage or
+                    domestic plumbing. When in doubt, consult a licensed pharmacist or primary health center." }}
+                </p>
+            </div>
+
+            <!-- Source Citation Metadata -->
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; color: var(--text-muted); border-top: 1px solid var(--bg-glass-border); padding-top: 12px;">
+                <div>
+                    Source: <strong>Central Drugs Standard Control Organization (CDSCO)</strong> • {{
+                    scan.disposal_source_section|default:"Guidelines on disposal of expired/unused drugs" }}
+                </div>
+                <div>
+                    Reviewed under CDSCO 2025 Protocol
+                </div>
+            </div>
+        </div>
+
+        <!-- Therapeutic Context & Raw Diagnostic Dump -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+            {% if scan.illness_info %}
+            <div class="glass-card">
+                <h4 style="font-size: 1.1rem; margin-bottom: 10px;">🩺 Clinical Context & Indications</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                    {{ scan.illness_info|linebreaksbr }}
+                </p>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 10px;">
+                    * Informational catalogue summary only; not medical or diagnostic advice.
+                </p>
+            </div>
+            {% endif %}
+
+            <div class="glass-card">
+                <h4 style="font-size: 1.1rem; margin-bottom: 10px;">🔍 Raw OCR Multi-Angle Audit Log</h4>
+                <div
+                    style="background: rgba(0, 0, 0, 0.5); padding: 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.82rem; color: #94a3b8; white-space: pre-wrap; max-height: 130px; overflow-y: auto;">
+                    {{ scan.raw_ocr_text|default:"No OCR character stream recorded." }}
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function setCandidateName(name) {
+                var input = document.getElementById('medicineNameInput');
+                if (input) {
+                    input.value = name;
+                }
+            }
+        </script>
+        {% endblock %}

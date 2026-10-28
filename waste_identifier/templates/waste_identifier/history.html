@@ -1,0 +1,120 @@
+{% extends 'waste_identifier/base.html' %}
+{% load static %}
+
+{% block title %}Scan History & Inspection Log | MedWaste AI{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+    <div>
+        <h1 style="font-size: 2rem;">Scan History & Archive</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Review and audit past medicine scans, dual-package analyses, and CDSCO disposal advice.</p>
+    </div>
+    <div>
+        <a href="{% url 'waste_identifier:home' %}" class="btn btn-primary btn-sm">
+            <span>+ Scan New Packaging</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px;">
+    <form method="GET" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{% url 'waste_identifier:history' %}" class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-secondary{% endif %}">
+                All ({{ total_count }})
+            </a>
+            <a href="{% url 'waste_identifier:history' %}?status=VALID" class="btn btn-sm {% if current_status == 'VALID' %}btn-primary{% else %}btn-secondary{% endif %}">
+                Valid ({{ valid_count }})
+            </a>
+            <a href="{% url 'waste_identifier:history' %}?status=EXPIRED" class="btn btn-sm {% if current_status == 'EXPIRED' %}btn-primary{% else %}btn-secondary{% endif %}">
+                Expired ({{ expired_count }})
+            </a>
+            <a href="{% url 'waste_identifier:history' %}?status=REVIEW" class="btn btn-sm {% if current_status == 'REVIEW' %}btn-primary{% else %}btn-secondary{% endif %}">
+                Review Needed ({{ review_count }})
+            </a>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search brand, salt, or dates..." style="background: rgba(0, 0, 0, 0.4); border: 1px solid var(--bg-glass-border); padding: 8px 14px; border-radius: var(--radius-sm); color: #fff; font-size: 0.9rem; outline: none;">
+            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+        </div>
+    </form>
+</div>
+
+<!-- Scans Table / Grid -->
+{% if scans %}
+<div class="glass-card" style="padding: 0; overflow: hidden;">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--bg-glass-border); background: rgba(255, 255, 255, 0.02); color: var(--text-secondary);">
+                    <th style="padding: 16px 20px;">Thumbnails</th>
+                    <th style="padding: 16px 20px;">Medicine & Active Salts</th>
+                    <th style="padding: 16px 20px;">Identity</th>
+                    <th style="padding: 16px 20px;">Expiry Status</th>
+                    <th style="padding: 16px 20px;">Expiry Date</th>
+                    <th style="padding: 16px 20px;">Disposal Rule</th>
+                    <th style="padding: 16px 20px;">Timestamp</th>
+                    <th style="padding: 16px 20px; text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scan in scans %}
+                <tr style="border-bottom: 1px solid var(--bg-glass-border); transition: var(--transition);" onmouseover="this.style.background='rgba(255,255,255,0.03)';" onmouseout="this.style.background='transparent';">
+                    <td style="padding: 14px 20px;">
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            {% if scan.effective_front_image %}
+                                <img src="{{ scan.effective_front_image.url }}" alt="Front" title="Front Package View" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4);">
+                            {% endif %}
+                            {% if scan.annotated_image %}
+                                <img src="{{ scan.annotated_image.url }}" alt="Back Overlay" title="Back Expiry Overlay" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                            {% elif scan.effective_back_image %}
+                                <img src="{{ scan.effective_back_image.url }}" alt="Back" title="Back View" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td style="padding: 14px 20px;">
+                        <div style="font-weight: 600; color: #fff;">{{ scan.medicine_name }}</div>
+                        {% if scan.composition %}
+                            <div style="font-size: 0.8rem; color: var(--text-muted); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ scan.composition }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 14px 20px;">
+                        <span class="tag-badge {% if scan.identity_status == 'confirmed' %}tag-back{% elif scan.identity_status == 'ambiguous' %}status-pill status-review{% else %}tag-front{% endif %}" style="font-size: 0.72rem; padding: 3px 8px;">
+                            {{ scan.get_identity_status_display }}
+                        </span>
+                    </td>
+                    <td style="padding: 14px 20px;">
+                        <span class="status-pill {% if scan.status == 'VALID' %}status-valid{% elif scan.status == 'EXPIRED' %}status-expired{% else %}status-review{% endif %}" style="font-size: 0.75rem; padding: 3px 8px;">
+                            {{ scan.get_status_display }}
+                        </span>
+                    </td>
+                    <td style="padding: 14px 20px; font-family: monospace; font-size: 0.88rem;">
+                        {{ scan.exp_date|default:"-" }}
+                    </td>
+                    <td style="padding: 14px 20px; font-family: monospace; font-size: 0.82rem; color: var(--primary-teal);">
+                        {{ scan.disposal_rule_id|default:"DISP-GENERAL" }}
+                    </td>
+                    <td style="padding: 14px 20px; color: var(--text-secondary); font-size: 0.85rem;">
+                        {{ scan.created_at|date:"M d, Y H:i" }}
+                    </td>
+                    <td style="padding: 14px 20px; text-align: right;">
+                        <a href="{% url 'waste_identifier:scan_detail' scan.id %}" class="btn btn-secondary btn-sm">
+                            Inspect →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="glass-card" style="text-align: center; padding: 60px 20px;">
+    <div style="font-size: 40px; margin-bottom: 12px;">📁</div>
+    <h3 style="font-size: 1.3rem; margin-bottom: 8px;">No Scan Records Found</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 20px;">Start by uploading packaging photos or trying a test dataset sample.</p>
+    <a href="{% url 'waste_identifier:home' %}" class="btn btn-primary btn-sm">Go to Dual Scanner</a>
+</div>
+{% endif %}
+{% endblock %}

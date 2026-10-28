@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vision-Based Smart Medicine Waste Identifier{% endblock %}</title>
+    
+    <!-- Google Fonts Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="{% url 'waste_identifier:home' %}" class="brand-logo">
+                <div class="brand-icon">💊</div>
+                <div class="brand-text">MedWaste <span>AI</span></div>
+            </a>
+            
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="{% url 'waste_identifier:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Scanner</a></li>
+                    <li><a href="{% url 'waste_identifier:history' %}" class="nav-link {% if request.resolver_match.url_name == 'history' %}active{% endif %}">Scan Log</a></li>
+                    <li><a href="{% url 'waste_identifier:disposal_guide' %}" class="nav-link {% if request.resolver_match.url_name == 'disposal_guide' %}active{% endif %}">Disposal Guide</a></li>
+                    <li><a href="/admin/" target="_blank" class="nav-link">Admin Review</a></li>
+                    <li>
+                        <a href="{% url 'waste_identifier:sample_scan' %}" class="nav-btn">
+                            <span>⚡ Quick Test</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Global Notifications & Alerts -->
+    <div class="container messages-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}success{% endif %}">
+                    <span>{{ message }}</span>
+                    <button type="button" style="background:none; border:none; color:inherit; cursor:pointer;" onclick="this.parentElement.remove();">✕</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Main Content Block -->
+    <main class="container" style="flex: 1; padding-top: 24px; padding-bottom: 48px;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Fullscreen Loading Spinner Overlay during Inference -->
+    <div id="loadingOverlay" class="modal-overlay">
+        <div style="text-align: center; color: #fff;">
+            <div style="display: inline-block; width: 64px; height: 64px; border: 4px solid rgba(6, 182, 212, 0.2); border-top-color: #06b6d4; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <h3 style="font-size: 1.5rem; margin-bottom: 8px;">Analyzing Medicine Packaging...</h3>
+            <p style="color: var(--text-secondary); max-width: 400px; font-size: 0.95rem;">
+                Running YOLOv8 detection, CLAHE enhancement, rotation-invariant OCR, and expiry safety verification.
+            </p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p style="margin-bottom: 6px;"><strong>Vision-Based Smart Medicine Waste Identifier</strong> — Academic Capstone Project</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Powered by YOLOv8, OpenCV, EasyOCR & Django. Designed to promote environmental sustainability and eliminate pharmaceutical waste hazards.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Interactive JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
